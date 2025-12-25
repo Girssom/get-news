@@ -21,19 +21,19 @@ if (!fs.existsSync(path.join(__dirname, 'public'))) {
 }
 
 // 创建output目录
-if (!fs.existsSync(path.join(__dirname, 'output'))) {
-  fs.mkdirSync(path.join(__dirname, 'output'), { recursive: true });
+if (!fs.existsSync('/tmp/output')) {
+  fs.mkdirSync('/tmp/output', { recursive: true });
 }
 
 // 创建默认的新闻数据文件
-if (!fs.existsSync(path.join(__dirname, 'output', 'daily.json'))) {
-  fs.writeFileSync(path.join(__dirname, 'output', 'daily.json'), JSON.stringify([]));
+if (!fs.existsSync('/tmp/output/daily.json')) {
+  fs.writeFileSync('/tmp/output/daily.json', JSON.stringify([]));
 }
 
 // API: 获取新闻列表（支持自定义关键词）
 app.get('/api/news', (req, res) => {
   try {
-    const newsData = fs.readFileSync(path.join(__dirname, 'output', 'daily.json'), 'utf8');
+    const newsData = fs.readFileSync('/tmp/output/daily.json', 'utf8');
     let news = JSON.parse(newsData);
     
     // 检查是否有自定义关键词

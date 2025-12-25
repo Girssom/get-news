@@ -6,7 +6,7 @@ const path = require('path');
 const cron = require('node-cron');
 
 // 创建输出目录
-const outputDir = path.join(__dirname, '../output');
+const outputDir = path.join('/tmp', 'output');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
