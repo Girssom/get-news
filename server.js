@@ -16,24 +16,24 @@ app.get('/', (req, res) => {
 });
 
 // 创建必要目录
-if (!fs.existsSync('./public')) {
-  fs.mkdirSync('./public', { recursive: true });
+if (!fs.existsSync(path.join(__dirname, 'public'))) {
+  fs.mkdirSync(path.join(__dirname, 'public'), { recursive: true });
 }
 
 // 创建output目录
-if (!fs.existsSync('./output')) {
-  fs.mkdirSync('./output', { recursive: true });
+if (!fs.existsSync(path.join(__dirname, 'output'))) {
+  fs.mkdirSync(path.join(__dirname, 'output'), { recursive: true });
 }
 
 // 创建默认的新闻数据文件
-if (!fs.existsSync('./output/daily.json')) {
-  fs.writeFileSync('./output/daily.json', JSON.stringify([]));
+if (!fs.existsSync(path.join(__dirname, 'output', 'daily.json'))) {
+  fs.writeFileSync(path.join(__dirname, 'output', 'daily.json'), JSON.stringify([]));
 }
 
 // API: 获取新闻列表（支持自定义关键词）
 app.get('/api/news', (req, res) => {
   try {
-    const newsData = fs.readFileSync('./output/daily.json', 'utf8');
+    const newsData = fs.readFileSync(path.join(__dirname, 'output', 'daily.json'), 'utf8');
     let news = JSON.parse(newsData);
     
     // 检查是否有自定义关键词
@@ -47,7 +47,7 @@ app.get('/api/news', (req, res) => {
     res.json(news);
   } catch (error) {
     console.error('读取新闻数据失败:', error);
-    res.status(500).json({ error: '读取新闻数据失败' });
+    res.status(500).json({ error: '读取新闻数据失败', details: error.message });
   }
 });
 

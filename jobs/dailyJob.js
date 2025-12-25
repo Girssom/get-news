@@ -2,11 +2,13 @@ const fetchAll = require('../services/fetchRSS');
 const filter = require('../services/filterByKeyword');
 const dedup = require('../services/deduplicate');
 const fs = require('fs');
+const path = require('path');
 const cron = require('node-cron');
 
 // 创建输出目录
-if (!fs.existsSync('./output')) {
-  fs.mkdirSync('./output', { recursive: true });
+const outputDir = path.join(__dirname, '../output');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
 }
 
 // 刷新新闻的核心函数
@@ -31,7 +33,7 @@ async function refreshNews() {
     
     // 保存前20条重点摘要
     const topNews = news.slice(0, 20);
-    fs.writeFileSync('./output/daily.json', JSON.stringify(topNews, null, 2));
+    fs.writeFileSync(path.join(outputDir, 'daily.json'), JSON.stringify(topNews, null, 2));
     
     console.log('新闻刷新完成，保存了', topNews.length, '条重点摘要');
     return topNews;
