@@ -31,8 +31,8 @@ async function refreshNews() {
     // 按发布时间排序（最新的在前）
     news.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
     
-    // 保存前20条重点摘要
-    const topNews = news.slice(0, 20);
+    // 保存前50条重点摘要
+    const topNews = news.slice(0, 50);
     fs.writeFileSync(path.join(outputDir, 'daily.json'), JSON.stringify(topNews, null, 2));
     
     console.log('新闻刷新完成，保存了', topNews.length, '条重点摘要');

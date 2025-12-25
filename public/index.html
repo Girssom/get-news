@@ -389,6 +389,7 @@
                 newsItem.innerHTML = `
                     <h3>${item.title}</h3>
                     <p>${item.desc.substring(0, 100)}...</p>
+                    <a href="${item.link}" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600; margin-bottom: 10px; display: inline-block;">查看原文</a>
                     <div class="news-meta">
                         <span class="news-source">${item.source}</span>
                         <span>${formattedDate}</span>
@@ -420,7 +421,7 @@
                     <span>${formattedDate}</span>
                 </div>
                 <div class="modal-desc">${news.desc}</div>
-
+                <a href="${news.link}" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 20px;">查看原文</a>
             `;
             
             modal.style.display = 'block';
