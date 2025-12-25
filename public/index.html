@@ -298,7 +298,10 @@
                 <button class="search-btn" onclick="searchByKeywords()">搜索</button>
                 <button class="clear-btn" onclick="clearSearch()">清除</button>
             </div>
-            <button class="refresh-btn" onclick="refreshNews()">手动刷新新闻</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="refresh-btn" onclick="refreshNews()">手动刷新新闻</button>
+                <button class="refresh-btn" onclick="showSourcesModal()">搜索网站</button>
+            </div>
         </div>
     </header>
 
@@ -312,6 +315,24 @@
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
             <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- 网站管理模态框 -->
+    <div id="sourcesModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close-btn" onclick="closeSourcesModal()">&times;</span>
+            <h2>搜索网站管理</h2>
+            <div style="margin-bottom: 20px;">
+                <h3>添加新网站</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="newSourceName" placeholder="网站名称" style="padding: 10px; flex: 1; border: 2px solid #667eea; border-radius: 5px;">
+                    <input type="text" id="newSourceUrl" placeholder="RSS地址" style="padding: 10px; flex: 2; border: 2px solid #667eea; border-radius: 5px;">
+                    <button onclick="addSource()" style="padding: 10px 20px; background-color: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">添加</button>
+                </div>
+            </div>
+            <h3>现有网站列表</h3>
+            <div id="sourcesList" style="max-height: 500px; overflow-y: auto;"></div>
         </div>
     </div>
 
@@ -436,8 +457,11 @@
         // 点击模态框外部关闭
         window.onclick = (event) => {
             const modal = document.getElementById('newsModal');
+            const sourcesModal = document.getElementById('sourcesModal');
             if (event.target === modal) {
                 closeModal();
+            } else if (event.target === sourcesModal) {
+                closeSourcesModal();
             }
         }
 
@@ -460,13 +484,280 @@
                     alert('新闻刷新失败');
                 }
             } catch (error) {
-                console.error('刷新新闻失败:', error);
-                alert('新闻刷新失败，请稍后重试');
-            } finally {
-                refreshBtn.textContent = originalText;
-                refreshBtn.disabled = false;
-            }
+            console.error('刷新新闻失败:', error);
+            alert('新闻刷新失败，请稍后重试');
+        } finally {
+            refreshBtn.textContent = originalText;
+            refreshBtn.disabled = false;
         }
-    </script>
+    }
+
+    // 网站管理功能
+    let sourcesData = [];
+
+    // 显示网站管理模态框
+    function showSourcesModal() {
+        const modal = document.getElementById('sourcesModal');
+        modal.style.display = 'block';
+        fetchSources();
+    }
+
+    // 关闭网站管理模态框
+    function closeSourcesModal() {
+        const modal = document.getElementById('sourcesModal');
+        modal.style.display = 'none';
+    }
+
+    // 获取所有新闻源
+    async function fetchSources() {
+        try {
+            const response = await fetch('/api/sources');
+            sourcesData = await response.json();
+            renderSources();
+        } catch (error) {
+            console.error('获取新闻源失败:', error);
+            alert('获取新闻源失败，请稍后重试');
+        }
+    }
+
+    // 渲染新闻源列表
+    function renderSources() {
+        const sourcesList = document.getElementById('sourcesList');
+        sourcesList.innerHTML = '';
+
+        sourcesData.forEach((source, index) => {
+            const sourceItem = document.createElement('div');
+            sourceItem.style.display = 'flex';
+            gap: '10px';
+            alignItems: 'center';
+            marginBottom: '15px';
+            padding: '15px';
+            backgroundColor: '#f9f9f9';
+            borderRadius: '8px';
+            border: '1px solid #eee';
+            sourceItem.style.cssText = `
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-bottom: 15px;
+                padding: 15px;
+                background-color: #f9f9f9;
+                border-radius: 8px;
+                border: 1px solid #eee;
+            `;
+
+            const editMode = document.createElement('div');
+            editMode.id = `editMode-${index}`;
+            editMode.style.cssText = `
+                display: none;
+                flex: 1;
+                gap: 10px;
+            `;
+            editMode.innerHTML = `
+                <input type="text" id="editName-${index}" value="${source.name}" style="padding: 8px; flex: 1; border: 2px solid #667eea; border-radius: 5px;">
+                <input type="text" id="editUrl-${index}" value="${source.url}" style="padding: 8px; flex: 2; border: 2px solid #667eea; border-radius: 5px;">
+            `;
+
+            const viewMode = document.createElement('div');
+            viewMode.id = `viewMode-${index}`;
+            viewMode.style.cssText = `
+                display: flex;
+                flex: 1;
+                gap: 15px;
+                align-items: center;
+            `;
+            viewMode.innerHTML = `
+                <div style="font-weight: 600; flex: 1;">${source.name}</div>
+                <div style="flex: 2; color: #666; word-break: break-all;">${source.url}</div>
+            `;
+
+            const actions = document.createElement('div');
+            actions.style.display = 'flex';
+            gap = '8px';
+            actions.style.cssText = `
+                display: flex;
+                gap: 8px;
+            `;
+
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '编辑';
+            editBtn.onclick = () => toggleEditMode(index);
+            editBtn.style.cssText = `
+                padding: 8px 12px;
+                background-color: #ffc107;
+                color: #333;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: 600;
+            `;
+
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = '保存';
+            saveBtn.id = `saveBtn-${index}`;
+            saveBtn.onclick = () => saveSource(index);
+            saveBtn.style.cssText = `
+                padding: 8px 12px;
+                background-color: #28a745;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: 600;
+                display: none;
+            `;
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.id = `cancelBtn-${index}`;
+            cancelBtn.onclick = () => toggleEditMode(index);
+            cancelBtn.style.cssText = `
+                padding: 8px 12px;
+                background-color: #6c757d;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: 600;
+                display: none;
+            `;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '删除';
+            deleteBtn.onclick = () => deleteSource(index);
+            deleteBtn.style.cssText = `
+                padding: 8px 12px;
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: 600;
+            `;
+
+            actions.appendChild(editBtn);
+            actions.appendChild(saveBtn);
+            actions.appendChild(cancelBtn);
+            actions.appendChild(deleteBtn);
+
+            sourceItem.appendChild(editMode);
+            sourceItem.appendChild(viewMode);
+            sourceItem.appendChild(actions);
+
+            sourcesList.appendChild(sourceItem);
+        });
+    }
+
+    // 切换编辑模式
+    function toggleEditMode(index) {
+        const editMode = document.getElementById(`editMode-${index}`);
+        const viewMode = document.getElementById(`viewMode-${index}`);
+        const editBtn = document.querySelector(`#sourcesList > div:nth-child(${index + 1}) button:nth-child(2)`);
+        const saveBtn = document.getElementById(`saveBtn-${index}`);
+        const cancelBtn = document.getElementById(`cancelBtn-${index}`);
+
+        if (editMode.style.display === 'none') {
+            editMode.style.display = 'flex';
+            viewMode.style.display = 'none';
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'block';
+            cancelBtn.style.display = 'block';
+        } else {
+            editMode.style.display = 'none';
+            viewMode.style.display = 'flex';
+            editBtn.style.display = 'block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+    }
+
+    // 添加新网站
+    async function addSource() {
+        const name = document.getElementById('newSourceName').value.trim();
+        const url = document.getElementById('newSourceUrl').value.trim();
+
+        if (!name || !url) {
+            alert('请填写完整的网站名称和RSS地址');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/sources', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, url })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                sourcesData = result.sources;
+                renderSources();
+                document.getElementById('newSourceName').value = '';
+                document.getElementById('newSourceUrl').value = '';
+                alert('网站添加成功');
+            }
+        } catch (error) {
+            console.error('添加网站失败:', error);
+            alert('添加网站失败，请稍后重试');
+        }
+    }
+
+    // 保存编辑的网站
+    async function saveSource(index) {
+        const name = document.getElementById(`editName-${index}`).value.trim();
+        const url = document.getElementById(`editUrl-${index}`).value.trim();
+
+        if (!name || !url) {
+            alert('请填写完整的网站名称和RSS地址');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/sources/${index}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, url })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                sourcesData = result.sources;
+                toggleEditMode(index);
+                renderSources();
+                alert('网站编辑成功');
+            }
+        } catch (error) {
+            console.error('编辑网站失败:', error);
+            alert('编辑网站失败，请稍后重试');
+        }
+    }
+
+    // 删除网站
+    async function deleteSource(index) {
+        if (!confirm('确定要删除这个网站吗？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/sources/${index}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                sourcesData = result.sources;
+                renderSources();
+                alert('网站删除成功');
+            }
+        } catch (error) {
+            console.error('删除网站失败:', error);
+            alert('删除网站失败，请稍后重试');
+        }
+    }
+</script>
 </body>
 </html>

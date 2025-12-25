@@ -7,6 +7,9 @@ const { refreshNews, job } = require('./jobs/dailyJob');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 解析JSON请求体
+app.use(express.json());
+
 // 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -62,6 +65,85 @@ app.get('/api/refresh', async (req, res) => {
   }
 });
 
+// API: 获取所有新闻源
+app.get('/api/sources', (req, res) => {
+  try {
+    const sources = require('./config/sources');
+    res.json(sources);
+  } catch (error) {
+    console.error('读取新闻源配置失败:', error);
+    res.status(500).json({ error: '读取新闻源配置失败' });
+  }
+});
+
+// API: 添加新闻源
+app.post('/api/sources', (req, res) => {
+  try {
+    const sources = require('./config/sources');
+    const newSource = req.body;
+    
+    // 验证输入
+    if (!newSource.name || !newSource.url) {
+      return res.status(400).json({ error: '请提供完整的新闻源信息（名称和URL）' });
+    }
+    
+    sources.push(newSource);
+    fs.writeFileSync(path.join(__dirname, 'config', 'sources.js'), `module.exports = ${JSON.stringify(sources, null, 2)};`);
+    
+    res.json({ success: true, sources });
+  } catch (error) {
+    console.error('添加新闻源失败:', error);
+    res.status(500).json({ error: '添加新闻源失败' });
+  }
+});
+
+// API: 编辑新闻源
+app.put('/api/sources/:index', (req, res) => {
+  try {
+    const sources = require('./config/sources');
+    const index = parseInt(req.params.index);
+    const updatedSource = req.body;
+    
+    // 验证输入
+    if (!updatedSource.name || !updatedSource.url) {
+      return res.status(400).json({ error: '请提供完整的新闻源信息（名称和URL）' });
+    }
+    
+    // 验证索引
+    if (index < 0 || index >= sources.length) {
+      return res.status(404).json({ error: '新闻源不存在' });
+    }
+    
+    sources[index] = updatedSource;
+    fs.writeFileSync(path.join(__dirname, 'config', 'sources.js'), `module.exports = ${JSON.stringify(sources, null, 2)};`);
+    
+    res.json({ success: true, sources });
+  } catch (error) {
+    console.error('编辑新闻源失败:', error);
+    res.status(500).json({ error: '编辑新闻源失败' });
+  }
+});
+
+// API: 删除新闻源
+app.delete('/api/sources/:index', (req, res) => {
+  try {
+    const sources = require('./config/sources');
+    const index = parseInt(req.params.index);
+    
+    // 验证索引
+    if (index < 0 || index >= sources.length) {
+      return res.status(404).json({ error: '新闻源不存在' });
+    }
+    
+    sources.splice(index, 1);
+    fs.writeFileSync(path.join(__dirname, 'config', 'sources.js'), `module.exports = ${JSON.stringify(sources, null, 2)};`);
+    
+    res.json({ success: true, sources });
+  } catch (error) {
+    console.error('删除新闻源失败:', error);
+    res.status(500).json({ error: '删除新闻源失败' });
+  }
+});
 
 // 启动定时任务
 job.start();
