@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT综合指挥舱</title>
+    <!-- 引入ECharts用于图表展示 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- 基础样式 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0a1929;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            background-color: #0f273d;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e3a5f;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+
+        .clock {
+            font-size: 16px;
+            color: #81d4fa;
+        }
+
+        /* 全局状态条 */
+        .global-status {
+            background-color: #152a42;
+            padding: 5px 20px;
+            display: flex;
+            gap: 30px;
+            border-bottom: 1px solid #1e3a5f;
+        }
+
+        .status-item {
+            color: #64b5f6;
+            font-size: 14px;
+        }
+
+        .status-green {
+            color: #4caf50;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* 模块样式 */
+        .module {
+            background-color: #0f273d;
+            border: 1px solid #1e3a5f;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .module-header {
+            background-color: #152a42;
+            padding: 15px;
+            border-bottom: 1px solid #1e3a5f;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4fc3f7;
+            margin-bottom: 5px;
+        }
+
+        .module-subtitle {
+            font-size: 14px;
+            color: #81d4fa;
+        }
+
+        /* 模块内容区域 */
+        .module-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 组件样式 */
+        .component {
+            background-color: #1a2f45;
+            border: 1px solid #284365;
+            border-radius: 6px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .component-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #90caf9;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #284365;
+        }
+
+        /* 切割感背景效果 */
+        .cutting-bg {
+            background-color: rgba(26, 47, 69, 0.8);
+            padding: 5px 0;
+            margin: 5px 0;
+        }
+
+        /* RUN模块样式 */
+        /* 系统状态指示灯 */
+        .system-status {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .status-light {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .light-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #284365;
+        }
+
+        .light-green {
+            background-color: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .light-yellow {
+            background-color: #ffeb3b;
+            box-shadow: 0 0 10px #ffeb3b;
+        }
+
+        .light-red {
+            background-color: #f44336;
+            box-shadow: 0 0 10px #f44336;
+        }
+
+        .light-label {
+            font-size: 12px;
+            color: #b3e5fc;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            height: 200px;
+            width: 100%;
+        }
+
+        /* BUILD模块样式 */
+        /* 需求漏斗 */
+        .funnel {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 150px;
+            padding: 10px 0;
+        }
+
+        .funnel-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .funnel-bar {
+            width: 80%;
+            background-color: #2196f3;
+            border-radius: 4px 4px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .funnel-bar:hover {
+            transform: scale(1.05);
+        }
+
+        .funnel-label {
+            font-size: 11px;
+            color: #b3e5fc;
+            text-align: center;
+        }
+
+        .funnel-change {
+            font-size: 10px;
+            color: #4caf50;
+        }
+
+        /* SERVE模块样式 */
+        /* 工单概览 */
+        .ticket-overview {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .ticket-circle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 3px solid #2196f3;
+        }
+
+        .circle-pending {
+            border-color: #ff9800;
+            color: #ff9800;
+        }
+
+        .circle-progress {
+            border-color: #2196f3;
+            color: #2196f3;
+        }
+
+        .circle-closed {
+            border-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .circle-label {
+            font-size: 12px;
+            color: #b3e5fc;
+        }
+
+        /* 响应时间 */
+        .response-time {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .time-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+        .time-target {
+            font-size: 14px;
+            color: #81d4fa;
+        }
+
+        /* 即将到期项 */
+        .expiration-list {
+            list-style: none;
+        }
+
+        .expiration-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: rgba(33, 150, 243, 0.1);
+            border-left: 3px solid #2196f3;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .expiration-item.warning {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left-color: #f44336;
+        }
+
+        .expiration-title {
+            font-weight: bold;
+            color: #90caf9;
+            margin-bottom: 3px;
+        }
+
+        .expiration-days {
+            font-size: 12px;
+            color: #ff9800;
+        }
+
+        .expiration-days.warning {
+            color: #f44336;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部标题栏 -->
+    <div class="header">
+        <div class="title">IT综合指挥舱</div>
+        <div class="clock">2023-10-27 10:30:45 AM</div>
+    </div>
+
+    <!-- 全局状态条 -->
+    <div class="global-status">
+        <div class="status-item">JAL状态: <span class="status-green">所有系统正常</span></div>
+        <div class="status-item">全局状态: <span class="status-green">所有系统正常</span></div>
+        <div class="status-item">全局状态: <span class="status-green">所有系统正常</span></div>
+        <div class="status-item">全局状态: <span class="status-green">所有系统正常</span></div>
+        <div class="status-item">全局状态: <span class="status-green">所有系统正常</span></div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <!-- RUN模块 -->
+        <div class="module">
+            <div class="module-header">
+                <div class="module-title">运行 (运维与健康)</div>
+                <div class="module-subtitle">系统稳定性与健康状态</div>
+            </div>
+            <div class="module-content">
+                <!-- 系统整体状态指示灯 -->
+                <div class="component">
+                    <div class="component-title">系统整体状态指示灯</div>
+                    <div class="system-status">
+                        <div class="status-light">
+                            <div class="light-circle light-yellow"></div>
+                            <div class="light-label">OA系统<br>运行缓慢</div>
+                        </div>
+                        <div class="status-light">
+                            <div class="light-circle light-green"></div>
+                            <div class="light-label">ERP系统<br>正常</div>
+                        </div>
+                        <div class="status-light">
+                            <div class="light-circle light-green"></div>
+                            <div class="light-label">CRM系统<br>正常</div>
+                        </div>
+                        <div class="status-light">
+                            <div class="light-circle light-green"></div>
+                            <div class="light-label">官方网站<br>正常</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLA可用性趋势 -->
+                <div class="component">
+                    <div class="component-title">SLA可用性趋势 (过去30天)</div>
+                    <div class="chart-container" id="sla-chart"></div>
+                    <div class="cutting-bg">
+                        <div style="padding: 0 15px; color: #81d4fa; font-size: 14px;">当前: 99.85% | 目标: 99.9%</div>
+                    </div>
+                </div>
+
+                <!-- 核心接口响应时间 -->
+                <div class="component">
+                    <div class="component-title">核心接口响应时间</div>
+                    <div style="text-align: center; padding: 20px 0;">
+                        <div style="font-size: 36px; font-weight: bold; color: #ff9800;">2.1s</div>
+                        <div class="cutting-bg">
+                            <div style="padding: 0 15px; color: #ff9800; font-size: 14px; font-weight: bold;">警告 >2s</div>
+                        </div>
+                        <div style="margin-top: 10px; color: #81d4fa; font-size: 14px;">OA: 提交审批</div>
+                    </div>
+                </div>
+
+                <!-- 错误率监控 -->
+                <div class="component">
+                    <div class="component-title">错误率监控 (HTTP 500, 最近1小时)</div>
+                    <div class="chart-container" id="error-chart"></div>
+                    <div class="cutting-bg">
+                        <div style="padding: 0 15px; color: #81d4fa; font-size: 14px;">数量: 45</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BUILD模块 -->
+        <div class="module">
+            <div class="module-header">
+                <div class="module-title">构建 (开发与项目)</div>
+                <div class="module-subtitle">研发交付与进度</div>
+            </div>
+            <div class="module-content">
+                <!-- 需求漏斗 -->
+                <div class="component">
+                    <div class="component-title">需求漏斗</div>
+                    <div class="funnel">
+                        <div class="funnel-stage">
+                            <div class="funnel-bar" style="height: 100%;">120</div>
+                            <div class="funnel-label">待处理</div>
+                            <div class="funnel-change">-120%</div>
+                        </div>
+                        <div class="funnel-stage">
+                            <div class="funnel-bar" style="height: 80%;">45</div>
+                            <div class="funnel-label">开发中</div>
+                            <div class="funnel-change">-35%</div>
+                        </div>
+                        <div class="funnel-stage">
+                            <div class="funnel-bar" style="height: 60%;">32</div>
+                            <div class="funnel-label">测试中</div>
+                            <div class="funnel-change">-89%</div>
+                        </div>
+                        <div class="funnel-stage">
+                            <div class="funnel-bar" style="height: 40%;">15</div>
+                            <div class="funnel-label">待发布</div>
+                            <div class="funnel-change">-18%</div>
+                        </div>
+                        <div class="funnel-stage">
+                            <div class="funnel-bar" style="height: 20%;">18</div>
+                            <div class="funnel-label">已发布</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本月交付概览 -->
+                <div class="component">
+                    <div class="component-title">本月交付概览</div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 1; background-color: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #4caf50;">20</div>
+                            <div style="color: #81d4fa; font-size: 14px;">计划发布:</div>
+                        </div>
+                        <div style="flex: 1; background-color: rgba(244, 67, 54, 0.1); padding: 15px; border-radius: 6px;">
+                            <div style="font-size: 14px; color: #f44336; font-weight: bold;">AI-Risk 3 延迟:</div>
+                            <div style="color: #81d4fa; font-size: 12px; margin-top: 5px;">• Project Project: Jonner San</div>
+                            <div style="color: #81d4fa; font-size: 12px;">• Piped Project: Searchground...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DORA指标 -->
+                <div class="component">
+                    <div class="component-title">DORA指标</div>
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1; background-color: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 16px; font-weight: bold; color: #4caf50;">部署频率:</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #4caf50; margin: 10px 0;">High</div>
+                            <div class="cutting-bg">
+                                <div style="padding: 0 15px; color: #4caf50; font-size: 12px;">↑(12week)</div>
+                            </div>
+                        </div>
+                        <div style="flex: 1; background-color: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 16px; font-weight: bold; color: #4caf50;">变更失败率:</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #4caf50; margin: 10px 0;">Low</div>
+                            <div class="cutting-bg">
+                                <div style="padding: 0 15px; color: #4caf50; font-size: 12px;">↓(2.9%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 资源负载热力图 -->
+                <div class="component">
+                    <div class="component-title">资源负载热力图</div>
+                    <div class="chart-container" id="heatmap-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVE模块 -->
+        <div class="module">
+            <div class="module-header">
+                <div class="module-title">服务 (服务与支持)</div>
+                <div class="module-subtitle">IT服务与工单支持</div>
+            </div>
+            <div class="module-content">
+                <!-- 今日工单概览 -->
+                <div class="component">
+                    <div class="component-title">今日工单概览</div>
+                    <div class="ticket-overview">
+                        <div class="ticket-circle">
+                            <div class="circle circle-pending">15</div>
+                            <div class="circle-label">待处理</div>
+                        </div>
+                        <div class="ticket-circle">
+                            <div class="circle circle-progress">28</div>
+                            <div class="circle-label">处理中</div>
+                        </div>
+                        <div class="ticket-circle">
+                            <div class="circle circle-closed">42</div>
+                            <div class="circle-label">今日已关闭</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 平均响应时间 -->
+                <div class="component">
+                    <div class="component-title">平均响应时间 (MTTR)</div>
+                    <div class="response-time">
+                        <div class="time-value">1.2</div>
+                        <div class="time-value">小时</div>
+                        <div class="time-target">目标: < 4小时</div>
+                    </div>
+                </div>
+
+                <!-- 问题分布 -->
+                <div class="component">
+                    <div class="component-title">主要问题分布</div>
+                    <div class="chart-container" id="issue-chart"></div>
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <div style="width: 12px; height: 12px; background-color: #9c27b0;"></div>
+                            <span>网络问题 (50%)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <div style="width: 12px; height: 12px; background-color: #2196f3;"></div>
+                            <span>VPN连接 (20%)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <div style="width: 12px; height: 12px; background-color: #ff9800;"></div>
+                            <span>软件安装 (15%)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <div style="width: 12px; height: 12px; background-color: #4caf50;"></div>
+                            <span>其他 (15%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 即将到期项 -->
+                <div class="component">
+                    <div class="component-title">即将到期项 (证书/服务)</div>
+                    <ul class="expiration-list">
+                        <li class="expiration-item warning">
+                            <div class="expiration-title">.corp.com SSL证书</div>
+                            <div class="expiration-days warning">剩余3天</div>
+                        </li>
+                        <li class="expiration-item">
+                            <div class="expiration-title">域名续费</div>
+                            <div class="expiration-days">剩余45天</div>
+                        </li>
+                        <li class="expiration-item">
+                            <div class="expiration-title">服务器维护</div>
+                            <div class="expiration-days">剩余60天</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新时钟
+        function updateClock() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = String(hours % 12 || 12).padStart(2, '0');
+            
+            const timeString = `${year}-${month}-${day} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        // 初始化图表
+        function initCharts() {
+            // SLA可用性趋势图
+            const slaChart = echarts.init(document.getElementById('sla-chart'));
+            const slaOption = {
+                xAxis: {
+                    type: 'category',
+                    data: ['10/01', '10/07', '10/10', '10/15', '10/22', '10/25', '10/30'],
+                    axisLabel: {
+                        color: '#81d4fa'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    axisLabel: {
+                        color: '#81d4fa',
+                        formatter: '{value}%'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                series: [{
+                    data: [99.9, 99.8, 99.9, 99.7, 99.9, 99.8, 99.85],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#4caf50',
+                        width: 3
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {offset: 0, color: 'rgba(76, 175, 80, 0.3)'},
+                            {offset: 1, color: 'rgba(76, 175, 80, 0.1)'}
+                        ])
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                }
+            };
+            slaChart.setOption(slaOption);
+
+            // 错误率监控图
+            const errorChart = echarts.init(document.getElementById('error-chart'));
+            const errorOption = {
+                xAxis: {
+                    type: 'category',
+                    data: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25', '10:30', '10:35', '10:40', '10:45', '10:50', '10:55'],
+                    axisLabel: {
+                        color: '#81d4fa',
+                        rotate: 45
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: {
+                        color: '#81d4fa'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                series: [{
+                    data: [2, 5, 3, 8, 4, 12, 7, 9, 5, 15, 3, 4],
+                    type: 'bar',
+                    itemStyle: {
+                        color: '#f44336'
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    containLabel: true
+                }
+            };
+            errorChart.setOption(errorOption);
+
+            // 资源负载热力图（简化版）
+            const heatmapChart = echarts.init(document.getElementById('heatmap-chart'));
+            const heatmapOption = {
+                xAxis: {
+                    type: 'category',
+                    data: ['10/10', '10/11', '10/12', '10/13', '10/14', '10/15', '10/16'],
+                    axisLabel: {
+                        color: '#81d4fa',
+                        rotate: 45
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: ['张三', '李四', '王五', '赵六'],
+                    axisLabel: {
+                        color: '#81d4fa'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#1e3a5f'
+                        }
+                    }
+                },
+                series: [{
+                    data: [
+                        [0, 0, 10], [1, 0, 5], [2, 0, 8], [3, 0, 12], [4, 0, 3], [5, 0, 6], [6, 0, 9],
+                        [0, 1, 5], [1, 1, 8], [2, 1, 12], [3, 1, 6], [4, 1, 10], [5, 1, 4], [6, 1, 7],
+                        [0, 2, 8], [1, 2, 10], [2, 2, 5], [3, 2, 8], [4, 2, 12], [5, 2, 7], [6, 2, 5],
+                        [0, 3, 12], [1, 3, 6], [2, 3, 10], [3, 3, 4], [4, 3, 8], [5, 3, 12], [6, 3, 6]
+                    ],
+                    type: 'heatmap',
+                    label: {
+                        show: true,
+                        color: '#ffffff'
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: 15,
+                        calculable: true,
+                        orient: 'horizontal',
+                        left: 'center',
+                        bottom: '0%',
+                        inRange: {
+                            color: ['#1e3a5f', '#2196f3', '#ff9800', '#f44336']
+                        },
+                        textStyle: {
+                            color: '#81d4fa'
+                        }
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '20%',
+                    containLabel: true
+                }
+            };
+            heatmapChart.setOption(heatmapOption);
+
+            // 问题分布图
+            const issueChart = echarts.init(document.getElementById('issue-chart'));
+            const issueOption = {
+                series: [{
+                    type: 'pie',
+                    radius: '60%',
+                    center: ['50%', '50%'],
+                    data: [
+                        {value: 50, name: '网络问题'},
+                        {value: 20, name: 'VPN连接'},
+                        {value: 15, name: '软件安装'},
+                        {value: 15, name: '其他'}
+                    ],
+                    itemStyle: {
+                        color: function(params) {
+                            const colors = ['#9c27b0', '#2196f3', '#ff9800', '#4caf50'];
+                            return colors[params.dataIndex];
+                        }
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+            issueChart.setOption(issueOption);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新时钟
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // 初始化图表
+            initCharts();
+            
+            // 窗口大小变化时重新调整图表
+            window.addEventListener('resize', function() {
+                echarts.getInstanceByDom(document.getElementById('sla-chart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('error-chart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('heatmap-chart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('issue-chart'))?.resize();
+            });
+        });
+    </script>
+</body>
+</html>
